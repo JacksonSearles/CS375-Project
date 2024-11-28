@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
+
+using namespace std;
 
 #define  MAX_TREE_HEIGHT 100
 
@@ -92,44 +95,134 @@ bool isSizeOne(struct minHeap* minHeap)
 
 // Extracts min-node from min heap
 struct minHeapNode* extractMin(struct minHeap* minHeap)
-{}
+{
+    struct minHeapNode* temp = minHeap->nodeArray[0]; //temp now minimum
+    minHeap->nodeArray[0] = minHeap->nodeArray[minHeap->size -1]; //fill that spot with botton of array
+    --minHeap->size; //size changed so update
+    minHeapify(minHeap, 0); // minheapify
+    return temp;
+}
 
 // Inserts a new node to the min heap
 void insertMinHeap(struct minHeap* minHeap, struct minHeapNode* minHeapNode)
-{}
+{
+    ++minHeap->size; //inserting means increasing size lmao
+    int i = minHeap->size - 1; //last item in array
+    while (i && minHeapNode->freq < minHeap->nodeArray[(i - 1) / 2]->freq) { //while not at top and frequency is less
+        minHeap->nodeArray[i] = minHeap->nodeArray[(i - 1) / 2]; //item switches with parent
+        i = (i - 1) / 2; // update i to match
+    }
+    minHeap->nodeArray[i] = minHeapNode;
+}
 
 // Builds min heap
 void buildMinHeap(struct minHeap* minHeap)
-{}
+{
+    int n = minHeap->size - 1; 
+    for (int i = (n - 1) / 2; i >= 0; --i) {
+        minHeapify(minHeap, i);
+    }
+}
 
 // Prints an array of given size
-void printArr(int arr[], int arraySize)
-{}
+void printArr(int arr[], int n)
+{
+    for (int i = 0; i < n; ++i) {
+        cout << arr[i];
+    }
+    cout << "\n";
+}
 
 // Checks if a given node is a leaf node
 bool isLeaf(struct minHeapNode* root)
-{}
+{
+    return !(root->leftNode) && !(root->rightNode); //return if node has children
+}
 
 // Creates a min heap of capacity equal to given size and 
 // inserts all characters of data[] into the min heap.
 // Initially, the size of the min heap is equal to the capacity
 struct minHeap* createAndBuildMinHeap(char data[], int freq[], int size)
-{}
+{
+    struct minHeap* minHeap = createMinHeap(size);
+
+    for (int i = 0; i < size; ++i) {
+        minHeap->nodeArray[i] = newNode(data[i], freq[i]); //for each item (node) in the array, maka a node with respective data
+    }
+    minHeap->size = size; //update size
+    buildMinHeap(minHeap);
+
+    return minHeap;
+}
 
 // The main function to build the Huffman tree
 struct minHeapNode* buildHuffmanTree(char data[], int freq[], int size)
-{}
+{
+    struct minHeapNode *left, *right, *top;
+    //create min heap of capacity size
+    struct minHeap* minHeap = createAndBuildMinHeap(data, freq, size);
+
+    while (!isSizeOne(minHeap)) {
+        //extract the two minimum freq items from heap
+        left = extractMin(minHeap);
+        right = extractMin(minHeap);
+
+        //create a new internal node with req = sum of those two children
+        //add to minHeap
+        //'$' used to denote this combination node
+        top = newNode('$', left->freq + right->freq);
+
+        top->leftNode = left;
+        top->rightNode = right;
+
+        insertMinHeap(minHeap, top);
+    }
+
+    //remaining node is the root and tree is finished
+    return extractMin(minHeap);
+    
+}
 
 // Prints Huffman codes from the root of the Huffman tree.
 // Uses arr[] to store codes
 void printCodes(struct minHeapNode* root, int arr[], int top)
-{}
+{
+    //0 is left
+    if(root->leftNode) {
+        arr[top] = 0;
+        printCodes(root->leftNode, arr, top+1);
+    }
+    //1 is right
+    if (root->rightNode) {
+        arr[top] = 1;
+        printCodes(root->rightNode, arr, top + 1);
+    }
+
+    //if leaf node than contains input chars
+    if(isLeaf(root)) {
+        cout << root->data << ": ";
+        printArr(arr, top);
+    }
+}
 
 // Builds a Huffman Tree and prints codes by traversing the built Huffman tree.
 void huffmanCodes(char data[], int freq[], int size)
-{}
+{
+    //make tree
+    struct minHeapNode* root = buildHuffmanTree(data, freq, size);
+    //print codes  using tree above
+    int arr[MAX_TREE_HEIGHT], top = 0;
+
+    printCodes(root, arr, top);
+    
+}
 
 int main()
 {
+    char testArr[] = { 'a', 'b', 'c', 'd', 'e', 'f' };
+    int testFreq[] = { 5, 9, 12, 13, 16, 45};
     
+    int size = sizeof(testArr) / sizeof(testArr[0]);
+
+    huffmanCodes(testArr, testFreq, size);
 }
