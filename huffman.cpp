@@ -1,42 +1,100 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-// What makes up a Huffman tree node
+//This can 
+#define  MAX_TREE_HEIGHT 100
+
+// What makes up a min heap tree node
 struct minHeapNode
-{};
+{
+    char data; // one of the characters
+    unsigned freq; // frequency of the character
+    struct minHeapNode *leftNode, *rightNode; // nodes to left and right of this node
+};
 
-// What makes up a collection of Huffman tree nodes
+// What makes up a collection of min heap nodes
 struct minHeap
-{};
+{
+    unsigned size; // current size of the min heap
+    unsigned capacity; // capacity of min heap
+    struct minHeapNode** nodeArray; // array of min heap node pointers, makes up the min heap
+};
 
-// Allocates a new Huffamn tree node with a given character and frequency
+// Allocates a new min heap node with a given character and frequency
 struct minHeapNode* newNode(char data, unsigned freq)
-{}; 
+{
+    // create a new temporary node
+    struct minHeapNode* tempNode = (struct minHeapNode*)malloc(sizeof(minHeapNode));
 
-// Creates a Huffman tree of given capacity
+    // set tempNodes left and rights node to NULL
+    tempNode->leftNode = tempNode->rightNode = NULL;
+    
+    // populate data fields
+    tempNode->data = data;
+    tempNode->freq = freq;
+
+    return tempNode;
+}; 
+
+// Creates a min heap of given capacity
 struct minHeap* createMinHeap(unsigned capacity)
-{};
+{
+    // create a new min heap
+    struct minHeap* minHeap = (struct minHeap*)malloc(sizeof(struct minHeap));
 
-// Swaps two Huffman tree nodes
+    minHeap->size = 0;
+    minHeap->capacity = capacity;
+    minHeap->nodeArray = (struct minHeapNode**)malloc(minHeap->capacity * sizeof(struct minHeapNode));
+
+    return minHeap;
+};
+
+// Swaps two min heap tree nodes
 void swapMinHeapNode(struct minHeapNode** a, struct minHeapNode** b)
-{}
+{
+    struct minHeapNode* t = *a;
+    *a = *b;
+    *b = t;
+}
 
-// Heapify's the Huffman tree
+// Heapifys the min heap
 void minHeapify(struct minHeap* minHeap, int index)
-{}
+{
+    int smallest = index;
+    int leftNode = 2 * index + 1;
+    int rightNode = 2 * index + 2;
+
+    if(leftNode < minHeap->size && minHeap->nodeArray[leftNode]->freq)
+        smallest = leftNode;
+    
+    if(rightNode < minHeap->size && minHeap->nodeArray[rightNode]->freq)
+        smallest = rightNode;
+
+    if(smallest != index)
+    {
+        swapMinHeapNode(&minHeap->nodeArray[smallest], &minHeap->nodeArray[index]);
+        minHeapify(minHeap, smallest);
+    }
+}
 
 // Checks if a heap is of size 1
 bool isSizeOne(struct minHeap* minHeap)
-{}
+{
+    if(minHeap->size == 1)
+        return true;
+    else
+        return false;
+}
 
-// Extracts min-node from Huffman tree
+// Extracts min-node from min heap
 struct minHeapNode* extractMin(struct minHeap* minHeap)
 {}
 
-// Inserts a new node to the Huffman tree
+// Inserts a new node to the min heap
 void insertMinHeap(struct minHeap* minHeap, struct minHeapNode* minHeapNode)
 {}
 
-// Builds Huffman tree
+// Builds min heap
 void buildMinHeap(struct minHeap* minHeap)
 {}
 
@@ -48,9 +106,9 @@ void printArr(int arr[], int arraySize)
 bool isLeaf(struct minHeapNode* root)
 {}
 
-// Creates a Huffman tree of capacity equal to size and 
-// inserts all characters of data[] into the Huffman tree.
-// Initially, the size of the Huffman tree is equal to the capacity
+// Creates a min heap of capacity equal to given size and 
+// inserts all characters of data[] into the min heap.
+// Initially, the size of the min heap is equal to the capacity
 struct minHeap* createAndBuildMinHeap(char data[], int freq[], int size)
 {}
 
@@ -58,12 +116,12 @@ struct minHeap* createAndBuildMinHeap(char data[], int freq[], int size)
 struct minHeapNode* buildHuffmanTree(char data[], int freq[], int size)
 {}
 
-// Prints Huffman codes from the root of the Huffman tree
+// Prints Huffman codes from the root of the Huffman tree.
 // Uses arr[] to store codes
 void printCodes(struct minHeapNode* root, int arr[], int top)
 {}
 
-// Builds a Huffman Treeand prints codes by traversing the built Huffman tree
+// Builds a Huffman Tree and prints codes by traversing the built Huffman tree.
 void huffmanCodes(char data[], int freq[], int size)
 {}
 
