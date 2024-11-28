@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//This can 
 #define  MAX_TREE_HEIGHT 100
 
 // What makes up a min heap tree node
@@ -60,19 +59,24 @@ void swapMinHeapNode(struct minHeapNode** a, struct minHeapNode** b)
 // Heapifys the min heap
 void minHeapify(struct minHeap* minHeap, int index)
 {
-    int smallest = index;
-    int leftNode = 2 * index + 1;
-    int rightNode = 2 * index + 2;
-
+    int smallest = index; // assumes the current node at index is smallest
+    int leftNode = 2 * index + 1; // index of the left child of the current node
+    int rightNode = 2 * index + 2; // index of the right child of the current node
+    
+    // If the left child exists and if leftNodes frequency is smaller, update smallest to leftNode
     if(leftNode < minHeap->size && minHeap->nodeArray[leftNode]->freq)
         smallest = leftNode;
     
+    // If the right child exists and if rightNodes frequency is smaller, update smallest to rightNode
     if(rightNode < minHeap->size && minHeap->nodeArray[rightNode]->freq)
         smallest = rightNode;
 
+    // if the smallest isnt the current node
     if(smallest != index)
     {
+        // swap the current node with smallest child usin swapMinHeapNode
         swapMinHeapNode(&minHeap->nodeArray[smallest], &minHeap->nodeArray[index]);
+        // do minHeapify() to the affected subtree
         minHeapify(minHeap, smallest);
     }
 }
