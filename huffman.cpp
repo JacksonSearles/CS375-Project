@@ -6,6 +6,8 @@
 #include <fstream>
 #include <sstream> 
 #include <map>
+#include <algorithm> 
+#include <iomanip> 
 
 using namespace std;
 
@@ -129,15 +131,6 @@ void buildMinHeap(struct minHeap* minHeap)
     }
 }
 
-// Prints the characters frequency to terminal
-void printArr(int arr[], int n)
-{
-    for (int i = 0; i < n; ++i) {
-        cout << arr[i];
-    }
-    cout << "\n";
-}
-
 // Checks if a given node is a leaf node
 bool isLeaf(struct minHeapNode* root)
 {
@@ -188,22 +181,22 @@ struct minHeapNode* buildHuffmanTree(vector<char>& characters, vector<int>& freq
     
 }
 
-// Prints Huffman codes from the root of the Huffman tree.
+// Creates Huffman codes from the root of the Huffman tree.
 // Uses arr[] to store codes
-void printCodes(struct minHeapNode* root, int arr[], int top, vector<char>& chars, map<char, string>& huffmanCodesMap, ofstream& huffmanOutputFile)
+void createCodes(struct minHeapNode* root, int arr[], int top, map<char, string>& huffmanCodesMap, ofstream& huffmanOutputFile)
 {
     //0 is left
     if(root->leftNode) {
         arr[top] = 0;
-        printCodes(root->leftNode, arr, top+1, chars, huffmanCodesMap, huffmanOutputFile);
+        createCodes(root->leftNode, arr, top+1, huffmanCodesMap, huffmanOutputFile);
     }
     //1 is right
     if (root->rightNode) {
         arr[top] = 1;
-        printCodes(root->rightNode, arr, top + 1, chars, huffmanCodesMap, huffmanOutputFile);
+        createCodes(root->rightNode, arr, top + 1, huffmanCodesMap, huffmanOutputFile);
     }
 
-    // leaf node, save the Huffman code and print it
+    // leaf node, save the Huffman code to the map
     if (isLeaf(root)) {
         string code = "";
 
@@ -211,27 +204,61 @@ void printCodes(struct minHeapNode* root, int arr[], int top, vector<char>& char
             code += to_string(arr[i]); // convert array to string
         }
 
-        huffmanCodesMap[root->data] = code; // store the code in the map
-
-        // print to terminal
-        cout << "\t" << root->data << ": "; // print the character to terminal
-        printArr(arr, top);                 // print the characters frequency to terminal
+        // store the code in the map, this map is passed in by reference, will change the map huffmanCodes()
+        huffmanCodesMap[root->data] = code; 
     }
 }
 
+// prints out the table of characters and their corresponding frequencies and Huffman codes
+void printHuffmanTable(const map<char, string>& huffmanCodesMap, const map<char, int>& characterMap) 
+{
+    // store character and frequency pairs in a vector
+    vector<pair<char, int>> freqVector(characterMap.begin(), characterMap.end());
+
+    // sort the vector by frequency
+    sort(freqVector.begin(), freqVector.end(), [](const pair<char, int>& a, const pair<char, int>& b) {
+            return a.second > b.second; // descending order by frequency
+    });
+
+    // print the sorted Huffman coding data table
+    cout << "\n\t\t\t   Huffman Coding Table:\n\n"
+         << "\t\tCharacter" << "\tFrequency" << "\tHuffman Code\n"
+         << "\t\t" << string(45, '-') << endl;
+
+for (const auto& pair : freqVector) {
+    char character = pair.first;
+    int frequency = pair.second;
+
+    // be able to represent a newline character
+    string displayChar = (character == '\n') ? "\\n" : string(1, character);
+
+    cout << "\t\t " << displayChar << " \t\t " << frequency << " \t\t " << huffmanCodesMap.at(character) << endl;
+}
+}
+
 // Builds a Huffman Tree and prints codes by traversing the built Huffman tree.
-void huffmanCodes(vector<char>& uniqueCharacters, vector<int>& frequencies, int size, vector<char>& chars, ofstream& huffmanOutputFile)
+void huffmanCodes(vector<char>& chars, ofstream& huffmanOutputFile, map<char, int> characterMap)
 {
     map<char, string> huffmanCodesMap; // for holding each character and its code
 
+    // extracting a each unique character and their frequencies from characterMap and putting them into vectors
+    int size = characterMap.size();
+    vector<char> uniqueCharacters;
+    vector<int> frequencies;
+    for (const auto& pair : characterMap) {
+        uniqueCharacters.push_back(pair.first);
+        frequencies.push_back(pair.second);
+    }
+
     //make tree
     struct minHeapNode* root = buildHuffmanTree(uniqueCharacters, frequencies, size);
-    //print codes  using tree above
+    //print codes using above tree 
     int arr[MAX_TREE_HEIGHT], top = 0;
 
-    cout << "DEBUGGING, GET RID OF ME:" << endl << "\tEach characters bitwise representation after huffman encoding:" << endl; // get rid of the print statement in printCodes()
-        printCodes(root, arr, top, chars, huffmanCodesMap, huffmanOutputFile);
+    createCodes(root, arr, top, huffmanCodesMap, huffmanOutputFile); // create the codes for each character, populating the huffmanCodesMap
     
+    printHuffmanTable(huffmanCodesMap, characterMap); // print the huffman coding data table
+
     // print the entire huffman code to the huffmanOutputFile
     for (char ch : chars) {
         huffmanOutputFile << huffmanCodesMap[ch]; 
@@ -240,22 +267,18 @@ void huffmanCodes(vector<char>& uniqueCharacters, vector<int>& frequencies, int 
 
 void printUnencoded(vector<char>& chars, ofstream &unencodedOutputFile)
 {
-    // iterate through each character in the vector    
-    for (char character : chars) 
-    { 
-        // iterate over each bit (8 bits for a char)
-        for (int i = 7; i >= 0; --i)  
-        {
-            // extract and print the bit at position i
-            unencodedOutputFile << ((character >> i) & 1); 
+    for (char character : chars) { // iterate through each character in the vector     
+        for (int i = 7; i >= 0; --i) { // iterate over each bit (8 bits for a char)
+            unencodedOutputFile << ((character >> i) & 1); // extract and print the bit at position i
         }
     }
 }
 
-void compareBits(ifstream& huffmanOutputFile, ifstream& unencodedOutputFile)
+void compareBits(ifstream& huffmanOutputFile, ifstream& unencodedOutputFile, vector<char> chars)
 {
     int numHuffmanBits = 0;
     int numUnencodedBits = 0;
+    int numberofChars = chars.size();
 
     char character;
     while (huffmanOutputFile.get(character)) {
@@ -265,20 +288,23 @@ void compareBits(ifstream& huffmanOutputFile, ifstream& unencodedOutputFile)
         numUnencodedBits++;
     }
 
-    cout << endl << "Number of bits in the original message: " << numUnencodedBits << endl;
-    cout << "Number of bits in the Huffman encoded message: " << numHuffmanBits << endl;
-    cout << "Huffman Coding cut out " << 100 - (static_cast<double>(numHuffmanBits)/numUnencodedBits)*100 << "% of the bits that made up the original message" << endl;
-    cout << "Huffman Coding saved " << numUnencodedBits-numHuffmanBits << " bits, which is ";
-    cout << ((numUnencodedBits - numHuffmanBits)/(8.0)) << " bytes";
-    cout << ", or " << ((numUnencodedBits - numHuffmanBits)/(8.0*1024)) << " kilobytes" << endl;
-    cout << endl;
+    double bytesSaved = (numUnencodedBits - numHuffmanBits) / 8.0;
+    double kilobytesSaved = bytesSaved / 1024.0;
+
+    cout << fixed << setprecision(2); // Use fixed-point notation and 2 decimal places
+    cout << "\n\tNumber of bits in the original message: " << numUnencodedBits << endl
+         << "\tNumber of bits in the Huffman encoded message: " << numHuffmanBits << endl
+         << "\tHuffman Coding saved " << numUnencodedBits - numHuffmanBits << " bits, which is "
+         << bytesSaved << " bytes, or " << kilobytesSaved << " KB\n"
+         << "\tAverage number of bits per character in the encoded message: " << numHuffmanBits / numberofChars << endl
+         << "\tCompression ratio: " << (static_cast<double>(numHuffmanBits) / numUnencodedBits) * 100 << "%\n\n";
 }
 
 int main(int argc, char* argv[])
 {
 
     // USE:  ./huffman input.txt huffmanOut.txt unencodedOut.txt
-
+    cout.imbue(locale("en_US.utf8"));  // puts commas into large numbers
 
     // create I/O file variables
     string inputFileName = argv[1];
@@ -297,14 +323,14 @@ int main(int argc, char* argv[])
         return 0;
     }
     if (!huffmanOutputFile || !unencodedOutputFile) {
-        cerr << endl << "\tError: Could not opening output file(s)" <<  endl << endl;
+        cerr << "\n\tError: Could not opening output file(s)\n\n";
         return 0;
     }
-
      
     // get the input, putting the characters into the chars vector
+    // The chars vector is every character in the input, in the order in which they appear. Allows duplicates, used to preserve input order
     char character;
-    vector<char> chars;
+    vector<char> chars; 
     while (inputFile.get(character)) { // read character by character
         chars.push_back(character); // put the character into the vector
     }
@@ -318,29 +344,8 @@ int main(int argc, char* argv[])
         characterMap[ch]++; // increment the frequency of the character, if its not in there, itll put it in
     }
 
-    // creating the characters and frequencies vectors
-    vector<char> uniqueCharacters;
-    vector<int> frequencies;
-    int size = characterMap.size();
-
-    // moving the characters and frequencies from the characterMap into their respective vectors
-    for (const auto& pair : characterMap) {
-        uniqueCharacters.push_back(pair.first); // collecting the just the characters
-    }
-    for (const auto& pair : characterMap) {
-        frequencies.push_back(pair.second); // collecting the just the frequncies
-    }
- 
-    // ****** get rid of me starting here
-    cout << endl << "DEBUGGING GET RID OF ME:" << endl << "\tCharacters and their corresponding frequencies: " << endl;
-    for (size_t i = 0; i < uniqueCharacters.size(); i++) { 
-        cout << "\t" << uniqueCharacters[i] << " : " << frequencies[i] << endl; 
-    }
-    cout << endl;
-    // ****** get rid of me ending here
-
     // print out the encoded binary, and the unencoded binary to two separate files 
-    huffmanCodes(uniqueCharacters, frequencies, size, chars, huffmanOutputFile); // prints out the huffman code into the huffmanOuputFile
+    huffmanCodes(chars, huffmanOutputFile, characterMap); // prints out the huffman code into the huffmanOuputFile
     printUnencoded(chars, unencodedOutputFile);  // turns all of the characters from the input into binary, and outputs the binary to the output file
     
     // closing the original output files, and reopening them as input files
@@ -354,6 +359,6 @@ int main(int argc, char* argv[])
     }
 
     // compares the number of bits in the uncoded output file with the number of bits in the encoded file
-    compareBits(huffmanInputFile, unencodedInputFile);
+    compareBits(huffmanInputFile, unencodedInputFile, chars);
 }
 
